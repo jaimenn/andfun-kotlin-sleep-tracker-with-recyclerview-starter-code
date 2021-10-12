@@ -41,12 +41,6 @@ import com.google.android.material.snackbar.Snackbar
  */
 class SleepTrackerFragment : Fragment() {
 
-    /**
-     * Called when the Fragment is ready to display content to the screen.
-     *
-     * This function uses DataBindingUtil to inflate R.layout.fragment_sleep_quality.
-     */
-
     private lateinit var adapter : SleepNightAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -105,16 +99,32 @@ class SleepTrackerFragment : Fragment() {
         })
 
         adapter = SleepNightAdapter(SleepNightListener { nightId ->
-            Toast.makeText(context, "${nightId}", Toast.LENGTH_LONG).show()
+            sleepTrackerViewModel.onSleepNightClicked(nightId)
         })
 
         val manager = GridLayoutManager(activity, 3)
+        manager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int) = when(position) {
+                0 -> 3
+                else -> 1
+            }
+
+        }
         binding.sleepList.layoutManager = manager
         binding.sleepList.adapter = adapter
 
         sleepTrackerViewModel.nights.observe(viewLifecycleOwner, Observer {
             it?.let {
-                adapter.submitList(it)
+                adapter.addHeaderAndSubmitList(it)
+            }
+        })
+
+        sleepTrackerViewModel.navigateToSleepDataQuality.observe(viewLifecycleOwner, Observer { night ->
+            night?.let {
+                this.findNavController().navigate(
+                    SleepTrackerFragmentDirections
+                        .actionSleepTrackerFragmentToSleepDetailFragment(night))
+                sleepTrackerViewModel.onSleepDataQualityNavigated()
             }
         })
 
